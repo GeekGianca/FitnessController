@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:id="@+id/id_grupo_acciones">
+        <item
+            android:id="@+id/action_agregarrutina"
+            android:icon="@drawable/ic_add_black_24dp"
+            android:title="@string/agregar_rut"
+            app:showAsAction="ifRoom" />
+
+    </group>
+
+</menu>
