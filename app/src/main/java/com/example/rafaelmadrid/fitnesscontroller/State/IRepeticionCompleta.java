@@ -8,6 +8,6 @@ public class IRepeticionCompleta implements Estado {
 
     @Override
     public int arrojarMensaje() {
-        return 0;
+        return 1;
     }
 }

@@ -51,6 +51,7 @@ public class PaginaPrincipal extends Fragment {
     private Repeticion espera = new Repeticion();
     private IEsperandoRepeticion espRep = new IEsperandoRepeticion();
     private IRepeticionCompleta repComp = new IRepeticionCompleta();
+    private int waveViewContador = 0;
 
 
     @Nullable
@@ -100,10 +101,16 @@ public class PaginaPrincipal extends Fragment {
                                 int est = espera.waveView;
                                 Log.d("Estado de State",""+est);
                             }else{
+                                if(espera.repeticion){
+                                    int est = espera.waveView;
+                                    waveViewContador += est;
+                                    int i = waveViewContador*100/items.get(spinner.getSelectedItemPosition()).getRepeticiones();
+                                    waveLoadingView.setProgressValue(i);
+                                    waveLoadingView.setCenterTitle(String.valueOf(waveViewContador));
+                                    Log.d("Estado de State 2", ""+waveViewContador);
+                                }
                                 espera.setEstado(espRep);
                                 espera.antesDeEjecutarse();
-                                int est = espera.waveView;
-                                Log.d("Estado de State 2", ""+est);
                             }
                         }
                     }
@@ -144,6 +151,7 @@ public class PaginaPrincipal extends Fragment {
 
         if(items.size()!=0) {
             button.setEnabled(true);
+
         }
 
 

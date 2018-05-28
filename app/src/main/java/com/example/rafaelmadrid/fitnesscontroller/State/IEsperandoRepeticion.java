@@ -9,6 +9,6 @@ public class IEsperandoRepeticion implements Estado {
 
     @Override
     public int arrojarMensaje() {
-        return 1;
+        return 0;
     }
 }
