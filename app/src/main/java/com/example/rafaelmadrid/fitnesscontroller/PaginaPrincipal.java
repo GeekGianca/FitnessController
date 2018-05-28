@@ -10,24 +10,24 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.rafaelmadrid.fitnesscontroller.State.Estado;
+import com.example.rafaelmadrid.fitnesscontroller.State.IEsperandoRepeticion;
+import com.example.rafaelmadrid.fitnesscontroller.State.IRepeticionCompleta;
+import com.example.rafaelmadrid.fitnesscontroller.State.Repeticion;
 
 import java.util.List;
 
@@ -35,16 +35,22 @@ import Data.rutina;
 
 public class PaginaPrincipal extends Fragment {
 
-    private ConectBluetooth conectBluetooth=new ConectBluetooth(getActivity(),BluetoothAdapter.getDefaultAdapter());;
+    private ConectBluetooth conectBluetooth;
     private Button button;
     private comunicacion comunicacion;
     private me.itangqi.waveloadingview.WaveLoadingView waveLoadingView;
     private List<rutina> items;
     private Spinner spinner;
-    int rep=0;
-    int muestraRepeticiones = 0;
-    int series=0;
+
+    private Handler recibeDatos;
+    private StringBuilder constructor = new StringBuilder();
+    private final int datoEnviado = 0;
+    private comunicacion comm;
+
     private rutina rutina;
+    private Repeticion espera = new Repeticion();
+    private IEsperandoRepeticion espRep = new IEsperandoRepeticion();
+    private IRepeticionCompleta repComp = new IRepeticionCompleta();
 
 
     @Nullable
@@ -58,18 +64,60 @@ public class PaginaPrincipal extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        Toolbar toolbar=getActivity().findViewById(R.id.toolbar);
+        toolbar.getMenu().clear();
+        toolbar.setTitle("Pagina Principal");
+
         TextView nombredisp=getActivity().findViewById(R.id.Nombredispcon);
         TextView Mac=getActivity().findViewById(R.id.mac);
         button=getActivity().findViewById(R.id.cap_r);
         button.setEnabled(false);
 
-        BluetoothAdapter myBluetoothadapter=BluetoothAdapter.getDefaultAdapter();
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                comunicacion = new comunicacion(conectBluetooth.getConnSocketBt(), getActivity().getBaseContext(), recibeDatos, datoEnviado);
+                comunicacion.start();
+                waveLoadingView.setVisibility(View.VISIBLE);
+            }
+        });
+
+        recibeDatos = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                    if (msg.what == datoEnviado){
+                        String leer = (String)msg.obj;
+                        constructor.append(leer);
+                        int finalLinea = constructor.indexOf("+");
+                        Log.d("Constructor",constructor.toString());
+                        if (finalLinea > 0){
+                            String datos = constructor.substring(0, finalLinea);
+                            Log.d("DATOS",datos);
+                            constructor.delete(0, constructor.length());
+                            if (datos.equals("Repeticion completa")){
+                                espera.setEstado(repComp);
+                                espera.antesDeEjecutarse();
+                                int est = espera.waveView;
+                                Log.d("Estado de State",""+est);
+                            }else{
+                                espera.setEstado(espRep);
+                                espera.antesDeEjecutarse();
+                                int est = espera.waveView;
+                                Log.d("Estado de State 2", ""+est);
+                            }
+                        }
+                    }
+
+            }
+        };
+
         waveLoadingView=getActivity().findViewById(R.id.repeticiones);
         waveLoadingView.setVisibility(View.INVISIBLE);
         spinner=getActivity().findViewById(R.id.spinerlista);
+
         ArrayAdapter nuevoadapter = new ArrayAdapter(getActivity(), R.layout.support_simple_spinner_dropdown_item, listarutinas());
         spinner.setAdapter(nuevoadapter);
-        if(myBluetoothadapter==null){
+        if (Utilidad.defaultBluetooth() == null){
             new AlertDialog.Builder(getActivity())
                     .setTitle("Error")
                     .setMessage("Dispositivo no Compatible")
@@ -82,31 +130,34 @@ public class PaginaPrincipal extends Fragment {
                     })
                     .create()
                     .show();
-        }else {
-            if (!myBluetoothadapter.isEnabled()) {
+        }else{
+            if (!Utilidad.defaultBluetooth().isEnabled()){
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, 1);
-            }
-            if (conectBluetooth.getBtSocket()==null) {
-                nombredisp.setText(nombredisp.getText() + ": Sin Conexion");
-                Mac.setText(Mac.getText() + " Sin Conexion");
-                if(items.size()==0){
-                    spinner.setEnabled(false);
-                }
-            } else {
-                nombredisp.setText(nombredisp.getText() + ": " + conectBluetooth.getBluetoothDevice().getName());
-                Mac.setText(Mac.getText() + " " + conectBluetooth.getBluetoothDevice().getAddress());
-                comunicacion=conectBluetooth.getComunicacion();
-                if(items.size()!=0 && conectBluetooth.getBtSocket().isConnected()) {
-                    button.setEnabled(true);
+            }else{
+                if (Utilidad.dispositivoConectado != null){
+                    nombredisp.setText(String.valueOf("Nombre del dispositivo: "+Utilidad.dispositivoConectado.getNombre()));
+                    Mac.setText(String.valueOf("Mac del dispositivo: "+Utilidad.dispositivoConectado.getMac()));
                 }
             }
         }
 
-        Toolbar toolbar=getActivity().findViewById(R.id.toolbar);
-        toolbar.getMenu().clear();
-        toolbar.setTitle("Pagina Principal");
-        iniciarrutina();
+        if(items.size()!=0) {
+            button.setEnabled(true);
+        }
+
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        try{
+            comm = new comunicacion(conectBluetooth.getConnSocketBt(), getActivity().getBaseContext(), recibeDatos, datoEnviado);
+            comm.start();
+        }catch (NullPointerException npe){
+            Log.e("Null Pointer",npe.getMessage());
+        }
     }
 
     public void setItems(List<rutina> items) {
@@ -129,69 +180,13 @@ public class PaginaPrincipal extends Fragment {
         return lista;
     }
 
-    public void iniciarrutina(){
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                comunicacion = conectBluetooth.getComunicacion();
-                waveLoadingView.setVisibility(View.VISIBLE);
-                new CargarRepeticiones().execute();
-            }
-        });
 
-    }
-
-    public void conteo(){
-        comunicacion.doInBackground(null);
-        comunicacion.onPostExecute(null);
+    public void setConectBluetooth(ConectBluetooth conectBluetooth) {
+        this.conectBluetooth = conectBluetooth;
     }
 
     public ConectBluetooth getConectBluetooth() {
         return conectBluetooth;
     }
 
-    public void setConectBluetooth(ConectBluetooth conectBluetooth) {
-        this.conectBluetooth = conectBluetooth;
-    }
-
-    private class CargarRepeticiones extends AsyncTask<Integer, String, String>{
-
-        @Override
-        protected String doInBackground(Integer... integers) {
-
-            Log.e("ENTRO AL BCKGND", "UNA VEZ");
-            String retorno = "";
-            rutina = items.get(spinner.getSelectedItemPosition());
-            while (rep <= rutina.getRepeticiones()) {
-                //comunicacion = conectBluetooth.getComunicacion();
-                conteo();
-                /*rep += 1;
-                if (rep == muestraRepeticiones+3){
-                    rep =+ 1;
-
-                    Log.d("Contador Rep", ""+muestraRepeticiones);
-                }*/
-                Log.d("Repeticion", "" + Common.estaRepitiendo);
-                Log.d("Cantidad", "" + rutina.getRepeticiones());
-                retorno = "Repeticion realizada";
-                publishProgress(String.valueOf(Common.estaRepitiendo), retorno);
-            }
-            return "Completo";
-        }
-
-        @Override
-        protected void onProgressUpdate(String... values) {
-            super.onProgressUpdate(values);
-            int repet = Integer.parseInt(values[0]);
-            waveLoadingView.setProgressValue(comunicacion.subemarea(repet, rutina.getRepeticiones()));
-            waveLoadingView.setCenterTitle(String.valueOf(repet));
-            Toast.makeText(getActivity().getBaseContext(),values[1], Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            //Aqui muestran el final de la repeticion
-        }
-    }
 }

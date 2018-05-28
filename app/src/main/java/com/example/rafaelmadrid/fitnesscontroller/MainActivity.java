@@ -1,5 +1,7 @@
 package com.example.rafaelmadrid.fitnesscontroller;
 
+import android.bluetooth.BluetoothAdapter;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,6 +13,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.support.v7.widget.Toolbar;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +25,12 @@ import Data.rutina;
 public class MainActivity extends AppCompatActivity {
 
     private List<rutina> items;
+
+    private BluetoothAdapter adaptador;
+    private ConectBluetooth conectBluetooth;
+    private PaginaPrincipal principal;
+    private Settings settingspage;
+    private PaginaRutinas paginaRutinas;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -56,30 +65,52 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
-    private ConectBluetooth conectBluetooth;
-    private PaginaPrincipal principal;
-    private Settings settingspage;
-    private PaginaRutinas paginaRutinas;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        principal=new PaginaPrincipal();
-        settingspage=new Settings(principal.getConectBluetooth());
-        paginaRutinas=new PaginaRutinas();
-        items=new ArrayList<>();
+
         Toolbar toolbar=findViewById(R.id.toolbar);
         toolbar.setTitle(getString(R.string.app_tittle));
         setSupportActionBar(toolbar);
         toolbar.setTitleTextColor(Color.WHITE);
-        BottomNavigationView navigation = findViewById(R.id.navigation);
+
+        principal=new PaginaPrincipal();
+        settingspage=new Settings();
+        paginaRutinas=new PaginaRutinas();
+
+        items=new ArrayList<>();
+
+        BottomNavigationView navigation = (BottomNavigationView)findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         MenuItem item=navigation.getMenu().getItem(0);
         navigation.setSelectedItemId(item.getItemId());
-        mOnNavigationItemSelectedListener.onNavigationItemSelected(item);
 
+        adaptador = BluetoothAdapter.getDefaultAdapter();
+        if (adaptador == null){
+            Toast.makeText(this, "Este dispositivo no soporta el Bluetooth", Toast.LENGTH_LONG).show();
+        }else{
+            verificaBluetooth();
+        }
+        Utilidad.cargarDispositivos(adaptador);
+        mOnNavigationItemSelectedListener.onNavigationItemSelected(item);
     }
 
+    private void verificaBluetooth() {
+        if (!adaptador.isEnabled()){
+            Intent habilitarBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(habilitarBluetooth, 1);
+        }else{
+
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode==1 && adaptador.isEnabled()){
+            Toast.makeText(this, "Bluetooth Encendido", Toast.LENGTH_LONG).show();
+        }
+    }
 }

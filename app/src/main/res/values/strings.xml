@@ -3,8 +3,8 @@
     <string name="title_dashboard">Lista de Rutinas</string>
     <string name="title_Settings">Ajustes</string>
     <string name="title_principal">Menu Principal</string>
-    <string name="NombredeelDispositivo">Nombre de el Dispositivo</string>
-    <string name="macdispconec">MAC :</string>
+    <string name="NombredeelDispositivo">Nombre del Dispositivo:</string>
+    <string name="macdispconec">Mac del Dispositivo:</string>
     <string name="acept">Aceptar</string>
     <string name="listemp">Lista de dispositivos emparejados</string>
     <string name="numrep">Ingrese Numero de Repeticiones</string>
@@ -15,4 +15,5 @@
     <string name="rep_rut">Numero de Repeticiones</string>
     <string name="errorsocket">La conexion no se ha efectuado</string>
     <string name="app_tittle">Pagina Principal</string>
+    <string name="iniciar_rutina">Iniciar rutina</string>
 </resources>

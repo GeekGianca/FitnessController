@@ -9,101 +9,83 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
+import android.util.Log;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.UUID;
 
-public class ConectBluetooth extends AsyncTask<Void,Void,Void>{
+public class ConectBluetooth{
 
-    static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private boolean ConnectSuccess = true;
-    private Context context;
-    private BluetoothSocket btSocket;
-    private BluetoothAdapter myBluetooth;
-    private BluetoothDevice bluetoothDevice;
-    private comunicacion comunicacion;
+    private static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private Handler recEnvDatos;
+    private BluetoothSocket connSocketBt;
+    private int datoRecibido;
+    private String macDispositivo;
+    private BluetoothDevice dispositivo;
+    private Context contexto;
+    private boolean conectado;
 
-    public ConectBluetooth(Context context, BluetoothAdapter bluetoothAdapter){
-        this.context=context;
-        btSocket=null;
-        myBluetooth=bluetoothAdapter;
-        this.bluetoothDevice=null;
+    public ConectBluetooth(Context contexto) {
+        this.contexto = contexto;
     }
 
-    public com.example.rafaelmadrid.fitnesscontroller.comunicacion getComunicacion() {
-        return comunicacion;
+    public void setOnCallConnection(String mac){
+        dispositivo = Utilidad.defaultBluetooth().getRemoteDevice(mac);
     }
 
-    public void setBluetoothDevice(BluetoothDevice bluetoothDevice) {
-        this.bluetoothDevice = bluetoothDevice;
-    }
-
-    public BluetoothSocket getBtSocket() {
-        return btSocket;
-    }
-
-    public void setContext(Context context) {
-        this.context = context;
-    }
-
-    public BluetoothDevice getBluetoothDevice() {
-        return bluetoothDevice;
-    }
-
-    public BluetoothAdapter getMyBluetooth() {
-        return myBluetooth;
-    }
-
-    protected void onPreExecute()
-    {
-        Toast.makeText(context,"Connecting....",Toast.LENGTH_LONG).show();
-    }
-
-    public boolean isConnectSuccess() {
-        return ConnectSuccess;
-    }
-
-    protected Void doInBackground(Void... devices) //while the progress dialog is shown, the connection is done in background
-    {
-        try
-        {
-            if (btSocket == null && bluetoothDevice!=null )
-            {
-                myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
-                BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(bluetoothDevice.getAddress());
-                btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);//create a RFCOMM (SPP) connection
-                myBluetooth.cancelDiscovery();
-                btSocket.connect();//start connection
-                comunicacion=new comunicacion(btSocket,context);
+    public void desconectar(){
+        try{
+            if (connSocketBt.isConnected()){
+                connSocketBt.close();
+                connSocketBt = null;
+                dispositivo = null;
+                onPostExecute("Bluetooth Desconectado");
             }
-        }
-        catch (IOException e)
-        {
-            ConnectSuccess = false;//if the try failed, you can check the exception here
-        }
-        return null;
-    }
-    @Override
-    protected void onPostExecute(Void result) //after the doInBackground, it checks if everything went fine
-    {
-        super.onPostExecute(result);
-        if (!ConnectSuccess)
-        {
-            Toast.makeText(context,"Connection Failed",Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            Log.e("IOException",e.getMessage());
         }
     }
 
-    public void desconectar() throws IOException {
-        if(btSocket.isConnected()){
-            btSocket.close();
-            btSocket=null;
-            bluetoothDevice=null;
+    public void execute() {
+        try{
+            Utilidad.defaultBluetooth().cancelDiscovery();
+            connSocketBt = dispositivo.createRfcommSocketToServiceRecord(myUUID);
+            connSocketBt.connect();
+            conectado = true;
+            onPostExecute("Bluetooth conectado");
+        } catch (IOException e) {
+            Log.e("IOException",e.getMessage());
+            onPostExecute("No se pudo conectar el Bluetooth");
+            conectado = false;
         }
     }
 
 
+    public void onPostExecute(String s) {
+        Toast.makeText(contexto, s, Toast.LENGTH_SHORT).show();
+    }
+
+    public Handler getRecEnvDatos() {
+        return recEnvDatos;
+    }
+
+    public BluetoothSocket getConnSocketBt() {
+        return connSocketBt;
+    }
+
+    public int getDatoRecibido() {
+        return datoRecibido;
+    }
+
+    public String getMacDispositivo() {
+        return macDispositivo;
+    }
+
+    public boolean isConectado() {
+        return conectado;
+    }
 }
 
 

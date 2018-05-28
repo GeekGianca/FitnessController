@@ -41,10 +41,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/mac"
         tools:ignore="MissingConstraints">
-
     </Spinner>
 
     <Button
+        android:text="@string/iniciar_rutina"
+        android:background="@color/colorPrimary"
         android:id="@+id/cap_r"
         android:layout_width="match_parent"
         android:layout_height="47dp"
@@ -52,7 +53,7 @@
         android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spinerlista"></Button>
+        app:layout_constraintTop_toBottomOf="@+id/spinerlista" />
 
     <me.itangqi.waveloadingview.WaveLoadingView
         android:id="@+id/repeticiones"
