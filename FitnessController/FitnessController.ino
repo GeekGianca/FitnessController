@@ -45,6 +45,7 @@ void loop() {
   Serial.println(us);
   if (distanciasonic <= 19) {
     blue.println("1+");
+    blue.println("Repeticion completa+");
     Serial.println("Repeticion completa");
     Serial.println("envie el dato");
     Serial.println(us);
