@@ -3,6 +3,7 @@ package com.example.rafaelmadrid.fitnesscontroller;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
@@ -33,6 +34,7 @@ public class Settings extends Fragment implements View.OnClickListener {
     private Spinner listspinner;
     private Button conectar;
     private Button desconectar;
+    private Button actualizar;
     private ConectBluetooth conectBluetooth;
     private DispositivosEmparejados dispEmp;
 
@@ -50,6 +52,8 @@ public class Settings extends Fragment implements View.OnClickListener {
         super.onViewCreated(view, savedInstanceState);
         conectar = (Button)view.findViewById(R.id.conectar);
         desconectar = (Button)view.findViewById(R.id.desconectar);
+        actualizar = (Button)view.findViewById(R.id.refresh);
+        actualizar.setOnClickListener(this);
         conectar.setOnClickListener(this);
         desconectar.setOnClickListener(this);
         listspinner = (Spinner)view.findViewById(R.id.list_disp);
@@ -118,6 +122,10 @@ public class Settings extends Fragment implements View.OnClickListener {
                         listspinner.setEnabled(true);
                     }
                 }
+                break;
+            case R.id.refresh:
+                cargaralalista();
+                conectBluetooth = new ConectBluetooth(getContext());
                 break;
         }
 

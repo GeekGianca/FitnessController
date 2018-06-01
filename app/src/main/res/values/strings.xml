@@ -16,4 +16,6 @@
     <string name="errorsocket">La conexion no se ha efectuado</string>
     <string name="app_tittle">Pagina Principal</string>
     <string name="iniciar_rutina">Iniciar rutina</string>
+    <string name="cancelar_rutina">Cancelar Rutina</string>
+    <string name="reiniciar_rutina">Reiniciar Rutina</string>
 </resources>

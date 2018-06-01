@@ -3,9 +3,11 @@ package com.example.rafaelmadrid.fitnesscontroller;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,6 +20,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
@@ -37,7 +40,7 @@ public class PaginaPrincipal extends Fragment {
 
     private ConectBluetooth conectBluetooth;
     private Button button;
-    private comunicacion comunicacion;
+    private Button cButton;
     private me.itangqi.waveloadingview.WaveLoadingView waveLoadingView;
     private List<rutina> items;
     private Spinner spinner;
@@ -47,11 +50,17 @@ public class PaginaPrincipal extends Fragment {
     private final int datoEnviado = 0;
     private comunicacion comm;
 
-    private rutina rutina;
     private Repeticion espera = new Repeticion();
     private IEsperandoRepeticion espRep = new IEsperandoRepeticion();
     private IRepeticionCompleta repComp = new IRepeticionCompleta();
     private int waveViewContador = 0;
+    private int series = 0;
+    private ProgressDialog mDialog;
+    private MediaPlayer mp;
+
+    public static abstract class AnonymousNestedClass{
+        public abstract void finalizaSerie();
+    }
 
 
     @Nullable
@@ -71,17 +80,54 @@ public class PaginaPrincipal extends Fragment {
 
         TextView nombredisp=getActivity().findViewById(R.id.Nombredispcon);
         TextView Mac=getActivity().findViewById(R.id.mac);
-        button=getActivity().findViewById(R.id.cap_r);
+        button=(Button)getActivity().findViewById(R.id.cap_r);
         button.setEnabled(false);
+        cButton = (Button)getActivity().findViewById(R.id.cancel);
+        cButton.setEnabled(false);
+
+        mp = MediaPlayer.create(getActivity(), R.raw.executeendtask);
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                comunicacion = new comunicacion(conectBluetooth.getConnSocketBt(), getActivity().getBaseContext(), recibeDatos, datoEnviado);
-                comunicacion.start();
+                cButton.setEnabled(true);
+                button.setEnabled(false);
+                comm = new comunicacion(conectBluetooth.getConnSocketBt(), getActivity().getBaseContext(), recibeDatos, datoEnviado);
+                comm.start();
+                series = series + 1;
+                waveLoadingView.setBottomTitle("Serie: "+ series +" | "+items.get(spinner.getSelectedItemPosition()).getSeries());
                 waveLoadingView.setVisibility(View.VISIBLE);
             }
         });
+
+        cButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                comm.destroy();
+                comm = null;
+                recibeDatos = null;
+                waveViewContador = 0;
+                cButton.setEnabled(false);
+                button.setEnabled(false);
+                reset();
+            }
+        });
+
+        final AnonymousNestedClass execute = new AnonymousNestedClass() {
+            @Override
+            public void finalizaSerie() {
+                mp.start();
+                cButton.setEnabled(false);
+                button.setEnabled(false);
+                waveLoadingView.setBottomTitle("Serie: "+ waveViewContador+" | "+items.get(spinner.getSelectedItemPosition()).getSeries());
+                Log.d("FINALIZADO","TERMINO SERIE");
+                mDialog = new ProgressDialog(getActivity());
+                mDialog.setTitle("Serie Terminada");
+                mDialog.setMessage("Esperando iniciar siguiente serie");
+                mDialog.show();
+                new SerieCompleta().execute();
+            }
+        };
 
         recibeDatos = new Handler(){
             @Override
@@ -95,7 +141,7 @@ public class PaginaPrincipal extends Fragment {
                             String datos = constructor.substring(0, finalLinea);
                             Log.d("DATOS",datos);
                             constructor.delete(0, constructor.length());
-                            if (datos.equals("Repeticion completa")){
+                            if (datos.equals("1")){
                                 espera.setEstado(repComp);
                                 espera.antesDeEjecutarse();
                                 int est = espera.waveView;
@@ -105,9 +151,13 @@ public class PaginaPrincipal extends Fragment {
                                     int est = espera.waveView;
                                     waveViewContador += est;
                                     int i = waveViewContador*100/items.get(spinner.getSelectedItemPosition()).getRepeticiones();
-                                    waveLoadingView.setProgressValue(i);
+                                    waveLoadingView.setProgressValue(i+1);
                                     waveLoadingView.setCenterTitle(String.valueOf(waveViewContador));
                                     Log.d("Estado de State 2", ""+waveViewContador);
+                                    if(waveViewContador==items.get(spinner.getSelectedItemPosition()).getRepeticiones()){
+                                        execute.finalizaSerie();
+                                        waveLoadingView.setBottomTitle("Serie: "+ series +" | "+items.get(spinner.getSelectedItemPosition()).getSeries());
+                                    }
                                 }
                                 espera.setEstado(espRep);
                                 espera.antesDeEjecutarse();
@@ -122,7 +172,7 @@ public class PaginaPrincipal extends Fragment {
         waveLoadingView.setVisibility(View.INVISIBLE);
         spinner=getActivity().findViewById(R.id.spinerlista);
 
-        ArrayAdapter nuevoadapter = new ArrayAdapter(getActivity(), R.layout.support_simple_spinner_dropdown_item, listarutinas());
+        ArrayAdapter<String> nuevoadapter = new ArrayAdapter<>(getActivity(), R.layout.support_simple_spinner_dropdown_item, listarutinas());
         spinner.setAdapter(nuevoadapter);
         if (Utilidad.defaultBluetooth() == null){
             new AlertDialog.Builder(getActivity())
@@ -151,20 +201,43 @@ public class PaginaPrincipal extends Fragment {
 
         if(items.size()!=0) {
             button.setEnabled(true);
-
+            cButton.setEnabled(true);
         }
 
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                reset();
+            }
 
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+    }
+
+    private void reset() {
+        waveViewContador = 0;
+        series = 0;
+        waveLoadingView.setVisibility(View.INVISIBLE);
+        waveLoadingView.setProgressValue(0);
+        waveLoadingView.setBottomTitle("Serie: 0 | 0");
+        waveLoadingView.setCenterTitle("0");
+        if(items.size()!=0) {
+            button.setEnabled(true);
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
         try{
-            comm = new comunicacion(conectBluetooth.getConnSocketBt(), getActivity().getBaseContext(), recibeDatos, datoEnviado);
-            comm.start();
+            //comm = new comunicacion(conectBluetooth.getConnSocketBt(), getActivity().getBaseContext(), recibeDatos, datoEnviado);
+            //comm.start();
         }catch (NullPointerException npe){
-            Log.e("Null Pointer",npe.getMessage());
+            Log.e("Null Pointer PP",npe.getMessage());
         }
     }
 
@@ -197,4 +270,51 @@ public class PaginaPrincipal extends Fragment {
         return conectBluetooth;
     }
 
+    public class SerieCompleta extends AsyncTask<Integer, String, String>{
+
+        @Override
+        protected String doInBackground(Integer... integers) {
+            float segundos = 4.5f;
+            float contador = 0.5f;
+            if (waveViewContador == items.get(spinner.getSelectedItemPosition()).getRepeticiones() && series == items.get(spinner.getSelectedItemPosition()).getSeries()){
+                return "Rutina terminada";
+            }else{
+                try {
+                    while (contador <= segundos){
+                        Thread.sleep(10000);
+                        Log.e("Estado", ""+contador);
+                        contador = contador+0.5f;
+                    }
+                } catch (InterruptedException e) {
+                    return "Se produjo un error";
+                }
+            }
+
+            return "Iniciando siguiente serie";
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            mDialog.dismiss();
+            if (s.equalsIgnoreCase("Rutina terminada")){
+                waveLoadingView.setCenterTitle(String.valueOf("Rutina Completa"));
+                new AlertDialog.Builder(getActivity())
+                        .setTitle("Rutina Completa")
+                        .setMessage("Has finalizado tu rutina")
+                        .setPositiveButton(R.string.acept, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                reset();
+                            }
+                        })
+                        .create()
+                        .show();
+            }else{
+                waveViewContador = 0;
+                series = series + 1;
+                waveLoadingView.setBottomTitle("Serie: "+ series +" | "+items.get(spinner.getSelectedItemPosition()).getSeries());
+            }
+            Toast.makeText(getActivity(), s, Toast.LENGTH_SHORT).show();
+        }
+    }
 }
