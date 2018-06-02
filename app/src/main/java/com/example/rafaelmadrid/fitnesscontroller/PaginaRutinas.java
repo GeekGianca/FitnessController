@@ -1,47 +1,33 @@
 package com.example.rafaelmadrid.fitnesscontroller;
 
 import android.app.AlertDialog;
-import android.app.DialogFragment;
-import android.content.ComponentName;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ListAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import Data.rutina;
+import Data.Archivo_Rutina;
+import Data.Rutina;
 
 public class PaginaRutinas extends Fragment {
 
-    private List<rutina> items;
+    private List<Rutina> items;
     private View dialogView;
     private AlertDialog builder;
+    private Archivo_Rutina archivo_rutina;
 
     @Nullable
     @Override
@@ -73,6 +59,7 @@ public class PaginaRutinas extends Fragment {
         }
         addr(menu);
         recycler();
+        archivo_rutina=new Archivo_Rutina(getActivity().getBaseContext());
     }
 
 
@@ -86,7 +73,7 @@ public class PaginaRutinas extends Fragment {
     }
 
 
-    public void setItems(List<rutina> items) {
+    public void setItems(List<Rutina> items) {
         this.items = items;
     }
 
@@ -128,9 +115,9 @@ public class PaginaRutinas extends Fragment {
         int series=0;
         int rep=0;
         EditText campo=null;
-        rutina rutina;
+        Rutina rutina;
         boolean pass=true;
-        rutina=new rutina();
+        rutina=new Rutina();
         do{
             switch (i){
                 case 0:
@@ -166,6 +153,7 @@ public class PaginaRutinas extends Fragment {
             rutina.setSeries(series);
             rutina.setRepeticiones(rep);
             items.add(rutina);
+            archivo_rutina.Guardar(items);
             builder.dismiss();
         }
     }

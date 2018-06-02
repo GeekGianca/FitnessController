@@ -1,12 +1,12 @@
 package Data;
 
-public class rutina {
+public class Rutina {
     private int series;
     private int repeticiones;
     private String Nombre;
 
 
-    public rutina() {
+    public Rutina() {
         series=0;
         repeticiones=0;
         Nombre="";

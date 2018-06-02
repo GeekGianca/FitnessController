@@ -27,14 +27,13 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.rafaelmadrid.fitnesscontroller.State.Estado;
 import com.example.rafaelmadrid.fitnesscontroller.State.IEsperandoRepeticion;
 import com.example.rafaelmadrid.fitnesscontroller.State.IRepeticionCompleta;
 import com.example.rafaelmadrid.fitnesscontroller.State.Repeticion;
 
 import java.util.List;
 
-import Data.rutina;
+import Data.Rutina;
 
 public class PaginaPrincipal extends Fragment {
 
@@ -42,7 +41,7 @@ public class PaginaPrincipal extends Fragment {
     private Button button;
     private Button cButton;
     private me.itangqi.waveloadingview.WaveLoadingView waveLoadingView;
-    private List<rutina> items;
+    private List<Rutina> items;
     private Spinner spinner;
 
     private Handler recibeDatos;
@@ -124,6 +123,8 @@ public class PaginaPrincipal extends Fragment {
                 mDialog = new ProgressDialog(getActivity());
                 mDialog.setTitle("Serie Terminada");
                 mDialog.setMessage("Esperando iniciar siguiente serie");
+                mDialog.setCancelable(false);
+                mDialog.setCanceledOnTouchOutside(false);
                 mDialog.show();
                 new SerieCompleta().execute();
             }
@@ -241,7 +242,7 @@ public class PaginaPrincipal extends Fragment {
         }
     }
 
-    public void setItems(List<rutina> items) {
+    public void setItems(List<Rutina> items) {
         this.items = items;
     }
 
@@ -275,7 +276,7 @@ public class PaginaPrincipal extends Fragment {
         @Override
         protected String doInBackground(Integer... integers) {
             float segundos = 4.5f;
-            float contador = 0.5f;
+            float contador = 1.5f;
             if (waveViewContador == items.get(spinner.getSelectedItemPosition()).getRepeticiones() && series == items.get(spinner.getSelectedItemPosition()).getSeries()){
                 return "Rutina terminada";
             }else{
@@ -283,7 +284,7 @@ public class PaginaPrincipal extends Fragment {
                     while (contador <= segundos){
                         Thread.sleep(10000);
                         Log.e("Estado", ""+contador);
-                        contador = contador+0.5f;
+                        contador = contador+1.0f;
                     }
                 } catch (InterruptedException e) {
                     return "Se produjo un error";
@@ -300,11 +301,13 @@ public class PaginaPrincipal extends Fragment {
                 waveLoadingView.setCenterTitle(String.valueOf("Rutina Completa"));
                 new AlertDialog.Builder(getActivity())
                         .setTitle("Rutina Completa")
-                        .setMessage("Has finalizado tu rutina")
+                        .setMessage("Has finalizado tu Rutina")
+                        .setCancelable(false)
                         .setPositiveButton(R.string.acept, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 reset();
+                                onViewCreated(getView(), getArguments());
                             }
                         })
                         .create()

@@ -14,10 +14,10 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import Data.rutina;
+import Data.Rutina;
 
 public class cardviewAdapter extends RecyclerView.Adapter<cardviewAdapter.cardviewholder> {
-    private List<rutina> items;
+    private List<Rutina> items;
     private View dialogView;
     private AlertDialog builder;
     ViewGroup group;
@@ -41,11 +41,11 @@ public class cardviewAdapter extends RecyclerView.Adapter<cardviewAdapter.cardvi
     }
 
 
-    public cardviewAdapter(List<rutina> items) {
+    public cardviewAdapter(List<Rutina> items) {
         this.items = items;
     }
 
-    public void setItems(List<rutina> items) {
+    public void setItems(List<Rutina> items) {
         this.items = items;
     }
 
@@ -122,11 +122,11 @@ public class cardviewAdapter extends RecyclerView.Adapter<cardviewAdapter.cardvi
         builder.show();
     }
 
-    public void check_out(rutina rutina,int pos) {
+    public void check_out(Rutina Rutina, int pos) {
         int i = 0;
-        String Nombre = rutina.getNombre();
-        int series = rutina.getSeries();
-        int rep = rutina.getRepeticiones();
+        String Nombre = Rutina.getNombre();
+        int series = Rutina.getSeries();
+        int rep = Rutina.getRepeticiones();
         EditText campo = null;
         do {
             switch (i) {
@@ -155,10 +155,10 @@ public class cardviewAdapter extends RecyclerView.Adapter<cardviewAdapter.cardvi
             }
             i++;
         }while (i < 3) ;
-        rutina.setNombre(Nombre);
-        rutina.setSeries(series);
-        rutina.setRepeticiones(rep);
-        items.set(pos,rutina);
+        Rutina.setNombre(Nombre);
+        Rutina.setSeries(series);
+        Rutina.setRepeticiones(rep);
+        items.set(pos, Rutina);
         builder.dismiss();
         notifyDataSetChanged();
     }
